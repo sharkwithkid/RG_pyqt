@@ -1,0 +1,22 @@
+{
+  "work_root": "C:/Users/임지윤/Desktop/2026반편성",
+  "roster_log_path": "C:/Users/임지윤/Desktop/2026반편성/☆resources/DB/###### 2026반이동_학교전체명단(2026.03) ######.xlsx",
+  "worker_name": "임지윤",
+  "school_start_date": "2026-03-03",
+  "work_date": "2026-03-20",
+  "last_arrived_date": "2026-03-03",
+  "roster_col_map": {
+    "sheet": "학교명단",
+    "header_row": 6,
+    "data_start": 7,
+    "col_school": 5,
+    "col_domain": 6,
+    "col_email_arr": 10,
+    "col_email_snt": 11,
+    "col_worker": 12,
+    "col_freshmen": 13,
+    "col_transfer": 14,
+    "col_withdraw": 15,
+    "col_teacher": 16
+  }
+}

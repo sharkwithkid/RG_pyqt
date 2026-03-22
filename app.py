@@ -2098,11 +2098,24 @@ class MainTab(QWidget):
         table.horizontalHeader().setStretchLastSection(False)
 
         for r, (idx, row) in enumerate(filtered_rows):
+            # 비고 컬럼 값으로 행 색상 결정
+            note_val = ""
+            if headers:
+                note_candidates = [i for i, h in enumerate(headers) if "비고" in str(h) or "사유" in str(h)]
+                note_col = note_candidates[-1] if note_candidates else (len(headers) - 1)
+                note_val = str(row[note_col]).strip() if note_col < len(row) else ""
+
+            is_hold = "보류:" in note_val and "자동 제외" not in note_val
+            is_auto_skip = "자동 제외" in note_val
+
             for c, value in enumerate(row):
                 item = QTableWidgetItem(str(value))
-                # 동명이인 노란색 강조
-                if idx in dup_indices:
-                    item.setBackground(QColor("#FEF9C3"))
+                if is_hold:
+                    item.setBackground(QColor("#FEF3C7"))  # 진짜 보류 — 노란색
+                elif is_auto_skip:
+                    item.setBackground(QColor("#F1F5F9"))  # 자동제외 — 연회색
+                elif idx in dup_indices:
+                    item.setBackground(QColor("#FEF9C3"))  # 동명이인 — 연노란
                 table.setItem(r, c, item)
 
         table.resizeColumnsToContents()
@@ -2695,27 +2708,29 @@ class MainTab(QWidget):
         file_bar_layout.addLayout(file_bar_top)
 
         # 파일명 표 (더블클릭으로 열기, 스캔 탭 스타일)
-        self.run_file_list_widget = QTableWidget(0, 1)
-        self.run_file_list_widget.setHorizontalHeaderLabels(["파일명"])
-        self.run_file_list_widget.horizontalHeader().setStretchLastSection(True)
+        self.run_file_list_widget = QTableWidget(0, 2)
+        self.run_file_list_widget.setHorizontalHeaderLabels(["파일명", "열기"])
+        self.run_file_list_widget.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.run_file_list_widget.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self.run_file_list_widget.setColumnWidth(1, 60)
         self.run_file_list_widget.verticalHeader().setVisible(False)
         self.run_file_list_widget.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.run_file_list_widget.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.run_file_list_widget.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.run_file_list_widget.setShowGrid(False)
-        self.run_file_list_widget.setAlternatingRowColors(True)
-        self.run_file_list_widget.setMouseTracking(True)
+        self.run_file_list_widget.setAlternatingRowColors(False)
+        self.run_file_list_widget.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.run_file_list_widget.setFixedHeight(80)
         self.run_file_list_widget.setStyleSheet("""
             QTableWidget {
                 border: 1px solid #E5E7EB;
                 border-radius: 8px;
                 font-size: 13px;
-                color: #1D4ED8;
+                color: #0F172A;
                 background: white;
             }
             QTableWidget::item { padding: 6px 8px; }
-            QTableWidget::item:hover { background: #EFF6FF; }
+            QTableWidget::item:hover { background: #F1F5F9; }
             QHeaderView::section {
                 background: #F8FAFC;
                 border: none;
@@ -4715,13 +4730,24 @@ class MainWindow(QMainWindow):
         for name in file_names:
             r = tbl.rowCount()
             tbl.insertRow(r)
-            item = QTableWidgetItem(name)
-            item.setToolTip("더블클릭하면 파일이 열립니다")
-            tbl.setItem(r, 0, item)
+            name_item = QTableWidgetItem(name)
+            name_item.setToolTip("더블클릭하면 파일이 열립니다")
+            tbl.setItem(r, 0, name_item)
+
+            open_btn = QPushButton("열기")
+            open_btn.setObjectName("GhostButton")
+            open_btn.setFixedHeight(26)
+            open_btn.setStyleSheet("font-size: 11px; padding: 2px 8px;")
+            _name = name
+            open_btn.clicked.connect(
+                lambda checked, n=_name: self.main_page.main_tab._open_run_file_signal.emit(n)
+            )
+            tbl.setCellWidget(r, 1, open_btn)
+
         row_h = 32
-        tbl.setFixedHeight(
-            tbl.horizontalHeader().height() + max(1, len(file_names)) * row_h + 4
-        )
+        hdr_h = tbl.horizontalHeader().height()
+        tbl.setFixedHeight(hdr_h + max(1, len(file_names)) * row_h + 4)
+        tbl.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         if file_names:
             tab.run_file_combo.setCurrentIndex(0)
